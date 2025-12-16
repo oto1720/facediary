@@ -46,11 +46,15 @@ class OnboardingViewModel: ObservableObject {
     /// カメラのセットアップと起動
     func startCamera() {
         registrationState = .capturing
-        do {
-            try cameraService.setupAndStart()
-        } catch {
-            registrationState = .failed(error)
-            errorMessage = "カメラの起動に失敗しました。\n(\(error.localizedDescription))"
+        Task {
+            do {
+                try await cameraService.setupAndStart()
+            } catch {
+                await MainActor.run {
+                    registrationState = .failed(error)
+                    errorMessage = "カメラの起動に失敗しました。\n(\(error.localizedDescription))"
+                }
+            }
         }
     }
 
