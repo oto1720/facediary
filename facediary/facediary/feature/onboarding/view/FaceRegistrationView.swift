@@ -9,10 +9,8 @@ struct FaceRegistrationView: View {
     var body: some View {
         ZStack {
             // カメラプレビュー
-            if let session = viewModel.cameraService.previewLayer.session {
-                CameraPreviewView(session: session)
-                    .ignoresSafeArea()
-            }
+            CameraPreviewView(session: viewModel.cameraService.captureSession)
+                .ignoresSafeArea()
 
             // UIオーバーレイ
             VStack {

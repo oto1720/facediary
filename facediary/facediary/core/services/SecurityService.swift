@@ -32,21 +32,33 @@ class KeychainSecurityService: SecurityServiceProtocol {
 
     /// 顔データをKeychainに保存または更新する
     func save(faceData: FaceData) throws {
+        print("[SecurityService] Saving face data to Keychain")
+        print("[SecurityService] Face data: userID=\(faceData.userID), observations size=\(faceData.faceObservations.count) bytes")
+
         guard let data = try? JSONEncoder().encode(faceData) else {
+            print("[SecurityService] Failed to encode face data")
             throw SecurityError.dataConversionError
         }
+
+        print("[SecurityService] Encoded data size: \(data.count) bytes")
 
         var query = baseQuery
         query[kSecValueData as String] = data
 
         // 最初に既存のアイテムを削除しようと試みる
-        SecItemDelete(query as CFDictionary)
+        let deleteStatus = SecItemDelete(query as CFDictionary)
+        print("[SecurityService] Delete existing item status: \(deleteStatus)")
 
         // 新しいアイテムを追加する
         let status = SecItemAdd(query as CFDictionary, nil)
+        print("[SecurityService] Add new item status: \(status)")
+
         guard status == errSecSuccess else {
+            print("[SecurityService] Keychain error: \(status)")
             throw SecurityError.keychainError(status: status)
         }
+
+        print("[SecurityService] Face data saved successfully")
     }
 
     /// Keychainから顔データを読み込む
