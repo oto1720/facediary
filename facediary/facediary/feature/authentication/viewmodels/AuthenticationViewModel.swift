@@ -48,10 +48,14 @@ class AuthenticationViewModel: ObservableObject {
     /// カメラの起動
     func startCamera() {
         authenticationState = .scanning
-        do {
-            try cameraService.setupAndStart()
-        } catch {
-            authenticationState = .failed("カメラの起動に失敗しました。\n(\(error.localizedDescription))")
+        Task {
+            do {
+                try await cameraService.setupAndStart()
+            } catch {
+                await MainActor.run {
+                    authenticationState = .failed("カメラの起動に失敗しました。\n(\(error.localizedDescription))")
+                }
+            }
         }
     }
 

@@ -59,10 +59,14 @@ class DiaryEntryViewModel: ObservableObject {
 
     /// Start camera
     func startCamera() {
-        do {
-            try cameraService.setupAndStart()
-        } catch {
-            errorMessage = "Failed to start camera: \(error.localizedDescription)"
+        Task {
+            do {
+                try await cameraService.setupAndStart()
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to start camera: \(error.localizedDescription)"
+                }
+            }
         }
     }
 

@@ -35,39 +35,62 @@ class CameraService: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     }
 
     /// カメラのセットアップとセッションの開始
-    func setupAndStart() throws {
-        try checkPermissions()
-        session.beginConfiguration()
-
-        session.sessionPreset = .photo
-
+    func setupAndStart() async throws {
+        print("[CameraService] setupAndStart called")
+        try await checkPermissions()
+        print("[CameraService] Permissions granted")
+        
+        // デバイスの取得を構成ブロックの外で行う
         guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) else {
+            print("[CameraService] Front camera not found")
             throw CameraError.setupFailed("フロントカメラが見つかりません")
         }
+        
+        guard let videoDeviceInput = try? AVCaptureDeviceInput(device: videoDevice) else {
+             print("[CameraService] Failed to create device input")
+             throw CameraError.setupFailed("カメラ入力を作成できません")
+        }
 
-        guard let videoDeviceInput = try? AVCaptureDeviceInput(device: videoDevice),
-              session.canAddInput(videoDeviceInput) else {
+        session.beginConfiguration()
+        // 構成ブロック内ではthrowしないようにする、あるいはdeferでcommitする
+        // ここでは安全に構成できることがわかってからaddInput/Outputする
+        
+        session.sessionPreset = .photo
+
+        if session.canAddInput(videoDeviceInput) {
+            session.addInput(videoDeviceInput)
+        } else {
+            print("[CameraService] Failed to add input")
+            session.commitConfiguration()
             throw CameraError.setupFailed("カメラ入力をセッションに追加できません")
         }
-        session.addInput(videoDeviceInput)
 
         // 静止画用の出力
-        guard session.canAddOutput(photoOutput) else {
+        if session.canAddOutput(photoOutput) {
+            session.addOutput(photoOutput)
+        } else {
+            print("[CameraService] Failed to add photo output")
+            session.commitConfiguration()
             throw CameraError.setupFailed("静止画出力をセッションに追加できません")
         }
-        session.addOutput(photoOutput)
 
         // 映像フレーム解析用の出力
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "video_frames_queue"))
-        guard session.canAddOutput(videoOutput) else {
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+        } else {
+            print("[CameraService] Failed to add video output")
+            session.commitConfiguration()
             throw CameraError.setupFailed("映像フレーム出力をセッションに追加できません")
         }
-        session.addOutput(videoOutput)
 
         session.commitConfiguration()
+        print("[CameraService] Configuration committed")
 
         DispatchQueue.global(qos: .userInitiated).async {
+            print("[CameraService] Starting session")
             self.session.startRunning()
+            print("[CameraService] Session started")
         }
     }
 
@@ -85,23 +108,13 @@ class CameraService: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     }
 
     /// カメラの使用許可を確認する
-    private func checkPermissions() throws {
+    private func checkPermissions() async throws {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             break
         case .notDetermined:
-            // 権限リクエストの結果を同期的に待つ
-            var permissionGranted = false
-            let semaphore = DispatchSemaphore(value: 0)
-
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                permissionGranted = granted
-                semaphore.signal()
-            }
-
-            semaphore.wait()
-
-            if !permissionGranted {
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            if !granted {
                 throw CameraError.permissionDenied
             }
         default:
