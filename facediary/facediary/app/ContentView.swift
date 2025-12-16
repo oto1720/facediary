@@ -8,14 +8,34 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var appViewModel = AppViewModel()
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            switch appViewModel.appState {
+            case .loading:
+                // ローディング画面
+                ProgressView("読み込み中...")
+                    .progressViewStyle(CircularProgressViewStyle())
+
+            case .onboarding:
+                // 顔未登録 → オンボーディング画面
+                FaceRegistrationView(onComplete: {
+                    appViewModel.onFaceRegistrationCompleted()
+                })
+
+            case .authentication:
+                // 顔登録済み → 認証画面
+                AuthenticationView(onAuthenticationSuccess: {
+                    appViewModel.onAuthenticationSucceeded()
+                })
+
+            case .authenticated:
+                // 認証成功 → メイン画面
+                HomeView()
+                    .environmentObject(appViewModel)
+            }
         }
-        .padding()
     }
 }
 

@@ -90,10 +90,19 @@ class CameraService: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
         case .authorized:
             break
         case .notDetermined:
-            session.requestAccess(for: .video) { granted in
-                if !granted {
-                    // Handle denial
-                }
+            // 権限リクエストの結果を同期的に待つ
+            var permissionGranted = false
+            let semaphore = DispatchSemaphore(value: 0)
+
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                permissionGranted = granted
+                semaphore.signal()
+            }
+
+            semaphore.wait()
+
+            if !permissionGranted {
+                throw CameraError.permissionDenied
             }
         default:
             throw CameraError.permissionDenied
