@@ -1,4 +1,3 @@
-
 import Foundation
 
 /// データ永続化に関するエラー
