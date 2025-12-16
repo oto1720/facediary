@@ -1,8 +1,0 @@
-<key>NSCameraUsageDescription</key>
-<string>顔写真を撮影して日記を作成するためにカメラへのアクセスが必要です</string>
-
-<key>NSFaceIDUsageDescription</key>
-<string>日記を安全に保護するためにFace IDを使用します</string>
-
-<key>NSPhotoLibraryUsageDescription</key>
-<string>写真を日記に追加するために写真ライブラリへのアクセスが必要です</string>
