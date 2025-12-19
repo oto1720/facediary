@@ -1,6 +1,9 @@
 
 import Foundation
 
+
+
+
 /// 一つの日記エントリーを表す構造体
 struct DiaryEntry: Identifiable, Codable {
     /// ユニークなID
@@ -31,5 +34,33 @@ struct DiaryEntry: Identifiable, Codable {
         self.text = text
         self.photoData = photoData
         self.moodScores = moodScores
+    }
+
+    // MARK: - Codable
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case date
+        case text
+        case photoData
+        case moodScores
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        date = try container.decode(Date.self, forKey: .date)
+        text = try container.decode(String.self, forKey: .text)
+        photoData = try container.decodeIfPresent(Data.self, forKey: .photoData)
+        moodScores = try container.decode([Mood: Double].self, forKey: .moodScores)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(date, forKey: .date)
+        try container.encode(text, forKey: .text)
+        try container.encode(photoData, forKey: .photoData)
+        try container.encode(moodScores, forKey: .moodScores)
     }
 }

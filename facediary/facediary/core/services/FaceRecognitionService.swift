@@ -45,15 +45,42 @@ class VisionFaceRecognitionService: FaceRecognitionServiceProtocol {
 
     /// 顔登録のために、画像からFaceDataを生成する
     func generateFaceData(from image: CIImage) throws -> FaceData {
+        print("[FaceRecognition] Starting face data generation")
+        print("[FaceRecognition] Image size: \(image.extent)")
+
         let request = createFaceLandmarksRequest()
-        guard let results = try performVisionRequest(on: image, requests: [request]) as? [VNFaceObservation],
-              let observation = results.first,
-              let landmarks = observation.landmarks else {
+        let handler = VNImageRequestHandler(ciImage: image, options: [:])
+
+        do {
+            try handler.perform([request])
+            print("[FaceRecognition] Vision request performed successfully")
+        } catch {
+            print("[FaceRecognition] Vision request failed: \(error)")
+            throw FaceRecognitionError.recognitionFailed(error)
+        }
+
+        guard let results = request.results as? [VNFaceObservation] else {
+            print("[FaceRecognition] Failed to get face observations from results")
             throw FaceRecognitionError.faceNotDetected
         }
 
+        print("[FaceRecognition] Found \(results.count) face(s)")
+
+        guard let observation = results.first else {
+            print("[FaceRecognition] No faces detected")
+            throw FaceRecognitionError.faceNotDetected
+        }
+
+        guard let landmarks = observation.landmarks else {
+            print("[FaceRecognition] No landmarks found")
+            throw FaceRecognitionError.faceNotDetected
+        }
+
+        print("[FaceRecognition] Face detected successfully, archiving landmarks")
+
         // ランドマークデータをData型に変換して保存
         let landmarkData = try NSKeyedArchiver.archivedData(withRootObject: landmarks, requiringSecureCoding: false)
+        print("[FaceRecognition] Landmarks archived, size: \(landmarkData.count) bytes")
 
         return FaceData(userID: UUID(), faceObservations: landmarkData, createdAt: Date())
     }
@@ -67,7 +94,11 @@ class VisionFaceRecognitionService: FaceRecognitionServiceProtocol {
 
         // 2. 新しい画像から顔の特徴を抽出
         let request = createFaceLandmarksRequest()
-        guard let results = try performVisionRequest(on: image, requests: [request]) as? [VNFaceObservation],
+        let handler = VNImageRequestHandler(ciImage: image, options: [:])
+
+        try handler.perform([request])
+
+        guard let results = request.results as? [VNFaceObservation],
               let currentObservation = results.first,
               let currentLandmarks = currentObservation.landmarks else {
             throw FaceRecognitionError.faceNotDetected
