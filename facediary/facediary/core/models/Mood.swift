@@ -1,8 +1,7 @@
-
 import Foundation
 
 /// ユーザーの感情や気分を表す列挙型
-enum Mood: String, CaseIterable, Codable {
+public enum Mood: String, CaseIterable, Codable {
     case happiness = "喜び"
     case sadness = "悲しみ"
     case anger = "怒り"
@@ -11,7 +10,7 @@ enum Mood: String, CaseIterable, Codable {
     case neutral = "普通"
 
     /// 各感情に対応する絵文字
-    var emoji: String {
+    public var emoji: String {
         switch self {
         case .happiness:
             return "😄"

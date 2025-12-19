@@ -36,9 +36,22 @@
 		8A75CE892EB36289005274D0 /* facediaryUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = facediaryUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8ABBE7542EF3C89800A13D1C /* Exceptions for "facediary" folder in "facediary" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			platformFiltersByRelativePath = {
+				core/models/DiaryEntry.swift = (ios, );
+			};
+			target = 8A75CE712EB36287005274D0 /* facediary */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8A75CE742EB36287005274D0 /* facediary */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8ABBE7542EF3C89800A13D1C /* Exceptions for "facediary" folder in "facediary" target */,
+			);
 			path = facediary;
 			sourceTree = "<group>";
 		};
