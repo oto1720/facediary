@@ -5,8 +5,9 @@ import AVFoundation
 /// 認証状態
 enum AuthenticationState {
     case ready // 認証準備
-    case scanning // 認証中
-    case processing // 認証中
+    case biometricAuth // 生体認証中
+    case scanning // 顔スキャン中
+    case processing // 顔認証処理中
     case success // 認証成功
     case failed(String) // 認証失敗
 }
@@ -23,6 +24,7 @@ class AuthenticationViewModel: ObservableObject {
     let cameraService: CameraService
     private let faceRecognitionService: FaceRecognitionServiceProtocol
     private let securityService: SecurityServiceProtocol
+    private let biometricAuthService: BiometricAuthenticationServiceProtocol
 
     private var cancellables = Set<AnyCancellable>()
     private var latestFrame: CVPixelBuffer?
@@ -33,11 +35,13 @@ class AuthenticationViewModel: ObservableObject {
     init(
         cameraService: CameraService = CameraService(),
         faceRecognitionService: FaceRecognitionServiceProtocol = VisionFaceRecognitionService(),
-        securityService: SecurityServiceProtocol = KeychainSecurityService()
+        securityService: SecurityServiceProtocol = KeychainSecurityService(),
+        biometricAuthService: BiometricAuthenticationServiceProtocol = BiometricAuthenticationService()
     ) {
         self.cameraService = cameraService
         self.faceRecognitionService = faceRecognitionService
         self.securityService = securityService
+        self.biometricAuthService = biometricAuthService
 
         setupBindings()
         loadReferenceFaceData()
@@ -64,36 +68,78 @@ class AuthenticationViewModel: ObservableObject {
         cameraService.stop()
     }
 
-    /// 認証
+    /// 認証（生体認証 → 顔認証の2段階認証）
     func authenticate() {
-        guard let frame = latestFrame else {
-            authenticationState = .failed("有効な画像フレームがありません。")
-            return
-        }
-
         guard let referenceFaceData = referenceFaceData else {
             authenticationState = .failed("顔データがありません。")
             return
         }
 
-        authenticationState = .processing
+        // まず生体認証（Face ID / Touch ID）を実行
+        authenticationState = .biometricAuth
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task {
             do {
-                let image = CIImage(cvPixelBuffer: frame)
-                let result = try self.faceRecognitionService.recognizeFace(from: image, referenceFaceData: referenceFaceData)
+                // 生体認証を実行
+                let biometricSuccess = try await biometricAuthService.authenticate()
 
-                DispatchQueue.main.async {
-                    if result.isAuthenticated {
-                        self.authenticationState = .success
-                    } else {
-                        self.authenticationState = .failed("顔認証に失敗しました。")
+                guard biometricSuccess else {
+                    await MainActor.run {
+                        authenticationState = .failed("生体認証に失敗しました。")
+                    }
+                    return
+                }
+
+                // 生体認証成功後、顔認証を実行
+                await MainActor.run {
+                    authenticationState = .processing
+                }
+
+                // 顔認証を実行
+                try await performFaceRecognition(referenceFaceData: referenceFaceData)
+
+            } catch let error as BiometricAuthenticationError {
+                await MainActor.run {
+                    switch error {
+                    case .userCancel:
+                        authenticationState = .failed("認証がキャンセルされました。")
+                    case .biometryNotEnrolled:
+                        authenticationState = .failed("生体認証が登録されていません。\n設定から登録してください。")
+                    case .biometryLockout:
+                        authenticationState = .failed("生体認証がロックされています。\nパスコードを入力してロックを解除してください。")
+                    case .passcodeNotSet:
+                        authenticationState = .failed("パスコードが設定されていません。")
+                    case .notAvailable:
+                        authenticationState = .failed("生体認証が利用できません。")
+                    default:
+                        authenticationState = .failed("生体認証に失敗しました。")
                     }
                 }
             } catch {
-                DispatchQueue.main.async {
-                    self.authenticationState = .failed("認証中にエラーが発生しました。\n(\(error.localizedDescription))")
+                await MainActor.run {
+                    authenticationState = .failed("認証中にエラーが発生しました。\n(\(error.localizedDescription))")
                 }
+            }
+        }
+    }
+
+    /// 顔認証を実行
+    private func performFaceRecognition(referenceFaceData: FaceData) async throws {
+        guard let frame = latestFrame else {
+            await MainActor.run {
+                authenticationState = .failed("有効な画像フレームがありません。")
+            }
+            return
+        }
+
+        let image = CIImage(cvPixelBuffer: frame)
+        let result = try faceRecognitionService.recognizeFace(from: image, referenceFaceData: referenceFaceData)
+
+        await MainActor.run {
+            if result.isAuthenticated {
+                authenticationState = .success
+            } else {
+                authenticationState = .failed("顔認証に失敗しました。")
             }
         }
     }

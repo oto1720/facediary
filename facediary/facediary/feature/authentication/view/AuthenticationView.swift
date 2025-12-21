@@ -22,8 +22,15 @@ struct AuthenticationView: View {
                 switch viewModel.authenticationState {
                 case .ready, .scanning:
                     scanningInstructionsView
+                case .biometricAuth:
+                    ProgressView("Face ID認証中...")
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                        .cornerRadius(10)
                 case .processing:
-                    ProgressView("認証中...")
+                    ProgressView("顔認証中...")
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .foregroundColor(.white)
                         .padding()
