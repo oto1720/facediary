@@ -149,6 +149,17 @@ class CameraService: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleB
     /// 写真を撮影する
     func takePhoto() {
         let settings = AVCapturePhotoSettings()
+
+        // フロントカメラの場合、ミラーリング設定を適用
+        if let photoOutputConnection = photoOutput.connection(with: .video) {
+            if photoOutputConnection.isVideoMirroringSupported {
+                photoOutputConnection.isVideoMirrored = true
+            }
+            if photoOutputConnection.isVideoOrientationSupported {
+                photoOutputConnection.videoOrientation = .portrait
+            }
+        }
+
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
 
