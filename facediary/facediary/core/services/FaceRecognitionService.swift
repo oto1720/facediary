@@ -118,8 +118,8 @@ class VisionFaceRecognitionService: FaceRecognitionServiceProtocol {
 
         print("[FaceRecognition] Similarity score: \(similarity)")
 
-        // 閾値: 0.85以上で本人と判定（調整可能）
-        let threshold: Double = 0.85
+        // 閾値: 0.70以上で本人と判定（ランドマークベースの比較に適した値）
+        let threshold: Double = 0.70
         let isAuthenticated = similarity >= threshold
 
         print("[FaceRecognition] Authentication result: \(isAuthenticated)")

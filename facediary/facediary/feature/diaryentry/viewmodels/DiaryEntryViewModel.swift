@@ -37,6 +37,7 @@ class DiaryEntryViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private var referenceFaceData: FaceData?
+    private var latestFrame: CVPixelBuffer?
 
     // MARK: - Initialization
 
@@ -77,8 +78,35 @@ class DiaryEntryViewModel: ObservableObject {
 
     /// Capture photo and analyze
     func capturePhotoAndAnalyze() {
+        guard let frame = latestFrame else {
+            errorMessage = "No video frame available"
+            return
+        }
+
         isProcessing = true
-        cameraService.takePhoto()
+
+        // Convert frame to JPEG data for storage
+        let ciImage = CIImage(cvPixelBuffer: frame)
+        let context = CIContext()
+
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            errorMessage = "Failed to create image"
+            isProcessing = false
+            return
+        }
+
+        let uiImage = UIImage(cgImage: cgImage)
+        guard let photoData = uiImage.jpegData(compressionQuality: 0.8) else {
+            errorMessage = "Failed to convert image to data"
+            isProcessing = false
+            return
+        }
+
+        // Store photo data
+        capturedPhotoData = photoData
+
+        // Analyze face and mood using the same frame
+        analyzeFaceAndMood(from: frame)
     }
 
     /// Save diary
@@ -150,22 +178,12 @@ class DiaryEntryViewModel: ObservableObject {
     // MARK: - Private Methods
 
     private func setupBindings() {
-        // Setup camera photo publisher
-        cameraService.photoPublisher
+        // Setup camera frame publisher to get video frames
+        cameraService.framePublisher
             .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    if case .failure(let error) = completion {
-                        self?.errorMessage = "Failed to capture photo: \(error.localizedDescription)"
-                        self?.isProcessing = false
-                        HapticFeedback.error()
-                    }
-                },
-                receiveValue: { [weak self] photoData in
-                    self?.capturedPhotoData = photoData
-                    self?.analyzeFaceAndMood(from: photoData)
-                }
-            )
+            .sink { [weak self] frame in
+                self?.latestFrame = frame
+            }
             .store(in: &cancellables)
     }
 
@@ -177,20 +195,16 @@ class DiaryEntryViewModel: ObservableObject {
         }
     }
 
-    /// Analyze face and mood
-    private func analyzeFaceAndMood(from photoData: Data) {
+    /// Analyze face and mood from video frame
+    private func analyzeFaceAndMood(from frame: CVPixelBuffer) {
         guard let referenceFaceData = referenceFaceData else {
             errorMessage = "No reference face data"
             isProcessing = false
             return
         }
 
-        guard let uiImage = UIImage(data: photoData),
-              let ciImage = CIImage(image: uiImage) else {
-            errorMessage = "Failed to create CIImage"
-            isProcessing = false
-            return
-        }
+        // Convert frame to CIImage (same as registration/authentication)
+        let ciImage = CIImage(cvPixelBuffer: frame)
 
         DispatchQueue.global(qos: .userInitiated).async {
             do {
