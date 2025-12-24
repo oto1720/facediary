@@ -75,4 +75,7 @@ extension Color {
 
     /// アクセント色
     static var appAccent: Color { AppColors.accent }
+
+    /// ボーダー色
+    static var appBorder: Color { AppColors.border }
 }

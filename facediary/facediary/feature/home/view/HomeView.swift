@@ -43,6 +43,7 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("FaceDiary")
+            .toolbarColorScheme(.light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
@@ -50,7 +51,7 @@ struct HomeView: View {
                     }) {
                         Image(systemName: "gearshape")
                             .font(.title3)
-                            .foregroundColor(Color.appAccent)
+                            .foregroundColor(Color.AppColors.textPrimary)
                     }
                 }
 
@@ -60,7 +61,7 @@ struct HomeView: View {
                     }) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
-                            .foregroundColor(Color.appAccent)
+                            .foregroundColor(Color.AppColors.textPrimary)
                     }
                 }
             }
