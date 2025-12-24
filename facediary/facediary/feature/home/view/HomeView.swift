@@ -10,16 +10,17 @@ struct HomeView: View {
         TabView(selection: $selectedTab) {
             diaryListTab
                 .tabItem {
-                    Label("Diary", systemImage: "book")
+                    Label("日記", systemImage: "book")
                 }
                 .tag(0)
 
             AnalyticsView()
                 .tabItem {
-                    Label("Analytics", systemImage: "chart.bar")
+                    Label("分析", systemImage: "chart.bar")
                 }
                 .tag(1)
         }
+        .tint(Color.appAccent)
     }
 
     // MARK: - Tab Views
@@ -27,16 +28,13 @@ struct HomeView: View {
     private var diaryListTab: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.6)]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                Color.appBackground
+                    .ignoresSafeArea()
 
                 VStack {
                     if viewModel.isLoading {
-                        ProgressView("Loading...")
+                        ProgressView("読み込み中...")
+                            .tint(Color.appAccent)
                     } else if viewModel.diaryEntries.isEmpty {
                         emptyStateView
                     } else {
@@ -52,6 +50,7 @@ struct HomeView: View {
                     }) {
                         Image(systemName: "gearshape")
                             .font(.title3)
+                            .foregroundColor(Color.appAccent)
                     }
                 }
 
@@ -61,9 +60,12 @@ struct HomeView: View {
                     }) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
+                            .foregroundColor(Color.appAccent)
                     }
                 }
             }
+            .toolbarBackground(Color.appSurface, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showingDiaryCreate) {
                 DiaryEntryCreateView(onComplete: {
                     viewModel.loadDiaryEntries()
@@ -85,16 +87,16 @@ struct HomeView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80, height: 80)
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color.appTextSecondary)
 
-            Text("No Diary Entries Yet")
+            Text("日記がまだありません")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(Color.appTextPrimary)
 
-            Text("Tap the + button to record\nyour mood today")
+            Text("+ボタンをタップして\n今日の気分を記録しましょう")
                 .font(.body)
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
 
             Button(action: {
@@ -102,15 +104,15 @@ struct HomeView: View {
             }) {
                 HStack {
                     Image(systemName: "camera.fill")
-                    Text("Create Diary")
+                    Text("日記を作成")
                 }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(Color.appSurface)
                 .padding(.horizontal, 30)
                 .padding(.vertical, 15)
-                .background(Color.blue)
+                .background(Color.appAccent)
                 .cornerRadius(25)
-                .shadow(radius: 5)
+                .shadow(color: Color.AppColors.shadow, radius: 5)
             }
             .padding(.top, 20)
         }
@@ -122,11 +124,14 @@ struct HomeView: View {
                 NavigationLink(destination: DiaryEntryDetailView(entry: entry)) {
                     DiaryEntryRow(entry: entry)
                 }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
             }
             .onDelete(perform: viewModel.deleteDiaryEntry)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .background(Color.appBackground)
     }
 }
 
@@ -145,16 +150,21 @@ struct DiaryEntryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.date, style: .date)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.appTextSecondary)
 
                 Text(entry.text)
                     .font(.body)
+                    .foregroundColor(Color.appTextPrimary)
                     .lineLimit(2)
             }
 
             Spacer()
         }
         .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Color.appSurface)
+        .cornerRadius(12)
+        .shadow(color: Color.AppColors.shadow, radius: 2, x: 0, y: 1)
     }
 }
 
