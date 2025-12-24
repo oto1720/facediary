@@ -6,35 +6,45 @@ struct AnalyticsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                if viewModel.isLoading {
-                    ProgressView("Loading...")
+            ZStack {
+                Color.appBackground
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    if viewModel.isLoading {
+                        ProgressView("読み込み中...")
+                            .tint(Color.appAccent)
+                            .padding()
+                    } else if let statistics = viewModel.statistics {
+                        VStack(spacing: 24) {
+                            // Overall Statistics
+                            overallStatisticsView(statistics: statistics)
+
+                            Divider()
+                                .background(Color.appBorder)
+
+                            // Mood Distribution
+                            moodDistributionView(statistics: statistics)
+
+                            Divider()
+                                .background(Color.appBorder)
+
+                            // Period Selector
+                            periodSelectorView
+
+                            // Mood Trend
+                            moodTrendView
+                        }
                         .padding()
-                } else if let statistics = viewModel.statistics {
-                    VStack(spacing: 24) {
-                        // Overall Statistics
-                        overallStatisticsView(statistics: statistics)
-
-                        Divider()
-
-                        // Mood Distribution
-                        moodDistributionView(statistics: statistics)
-
-                        Divider()
-
-                        // Period Selector
-                        periodSelectorView
-
-                        // Mood Trend
-                        moodTrendView
+                    } else {
+                        emptyStateView
                     }
-                    .padding()
-                } else {
-                    emptyStateView
                 }
             }
-            .navigationTitle("Analytics")
+            .navigationTitle("分析")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.appSurface, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
     }
 
@@ -42,18 +52,19 @@ struct AnalyticsView: View {
 
     private func overallStatisticsView(statistics: MoodStatistics) -> some View {
         VStack(spacing: 16) {
-            Text("Overall Statistics")
+            Text("全体の統計")
                 .font(.headline)
+                .foregroundColor(Color.appTextPrimary)
 
             HStack(spacing: 20) {
                 statCard(
-                    title: "Total Entries",
+                    title: "合計エントリー数",
                     value: "\(statistics.totalEntries)",
                     icon: "book.fill"
                 )
 
                 statCard(
-                    title: "Avg. Entries/Day",
+                    title: "1日平均",
                     value: String(format: "%.1f", statistics.averageEntriesPerDay),
                     icon: "calendar"
                 )
@@ -61,20 +72,21 @@ struct AnalyticsView: View {
 
             if let mostFrequentMood = statistics.mostFrequentMood {
                 VStack {
-                    Text("Most Frequent Mood")
+                    Text("最も多い気分")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.appTextSecondary)
                     HStack {
                         Text(mostFrequentMood.emoji)
                             .font(.system(size: 40))
                         Text(mostFrequentMood.rawValue)
                             .font(.title2)
                             .fontWeight(.semibold)
+                            .foregroundColor(Color.appTextPrimary)
                     }
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color.color(for: mostFrequentMood).opacity(0.2))
+                .background(Color.color(for: mostFrequentMood).opacity(0.15))
                 .cornerRadius(15)
             }
         }
@@ -82,12 +94,13 @@ struct AnalyticsView: View {
 
     private func moodDistributionView(statistics: MoodStatistics) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Mood Distribution")
+            Text("気分の分布")
                 .font(.headline)
+                .foregroundColor(Color.appTextPrimary)
 
             if statistics.moodDistribution.isEmpty {
-                Text("No mood data available")
-                    .foregroundColor(.secondary)
+                Text("気分データがありません")
+                    .foregroundColor(Color.appTextSecondary)
                     .padding()
             } else {
                 let sortedMoods = statistics.moodDistribution.sorted { $0.value > $1.value }
@@ -105,18 +118,20 @@ struct AnalyticsView: View {
                     .font(.title2)
                 Text(mood.rawValue)
                     .font(.body)
+                    .foregroundColor(Color.appTextPrimary)
                 Spacer()
                 Text("\(count)")
                     .font(.headline)
+                    .foregroundColor(Color.appTextPrimary)
                 Text("(\(String(format: "%.0f%%", Double(count) / Double(total) * 100)))")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.appTextSecondary)
             }
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(.systemGray5))
+                        .fill(Color.appBackgroundSecondary)
                         .frame(height: 8)
 
                     RoundedRectangle(cornerRadius: 4)
@@ -131,9 +146,9 @@ struct AnalyticsView: View {
 
     private var periodSelectorView: some View {
         HStack(spacing: 12) {
-            periodButton(title: "Week", period: .week)
-            periodButton(title: "Month", period: .month)
-            periodButton(title: "Year", period: .year)
+            periodButton(title: "週", period: .week)
+            periodButton(title: "月", period: .month)
+            periodButton(title: "年", period: .year)
         }
     }
 
@@ -144,22 +159,23 @@ struct AnalyticsView: View {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(viewModel.selectedPeriod == period ? .white : .primary)
+                .foregroundColor(viewModel.selectedPeriod == period ? Color.appSurface : Color.appTextPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(viewModel.selectedPeriod == period ? Color.blue : Color(.systemGray6))
+                .background(viewModel.selectedPeriod == period ? Color.appAccent : Color.appBackgroundSecondary)
                 .cornerRadius(8)
         }
     }
 
     private var moodTrendView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Mood Trend")
+            Text("気分の推移")
                 .font(.headline)
+                .foregroundColor(Color.appTextPrimary)
 
             if viewModel.moodTrend.isEmpty {
-                Text("No mood trend data for the selected period")
-                    .foregroundColor(.secondary)
+                Text("選択した期間の気分データがありません")
+                    .foregroundColor(Color.appTextSecondary)
                     .padding()
             } else {
                 let sortedTrend = viewModel.moodTrend.sorted { $0.key < $1.key }
@@ -170,10 +186,10 @@ struct AnalyticsView: View {
                                 .font(.title3)
                             Text("\(Calendar.current.component(.day, from: date))")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color.appTextSecondary)
                         }
                         .padding(8)
-                        .background(Color.color(for: mood).opacity(0.2))
+                        .background(Color.color(for: mood).opacity(0.15))
                         .cornerRadius(8)
                     }
                 }
@@ -185,19 +201,21 @@ struct AnalyticsView: View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.blue)
+                .foregroundColor(Color.appAccent)
             Text(value)
                 .font(.title)
                 .fontWeight(.bold)
+                .foregroundColor(Color.appTextPrimary)
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.appSurface)
         .cornerRadius(15)
+        .shadow(color: Color.AppColors.shadow, radius: 3, x: 0, y: 2)
     }
 
     private var emptyStateView: some View {
@@ -206,15 +224,16 @@ struct AnalyticsView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80, height: 80)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.appTextSecondary)
 
-            Text("No Data Available")
+            Text("データがありません")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(Color.appTextPrimary)
 
-            Text("Create some diary entries to see your mood analytics")
+            Text("日記を作成して気分の分析を見ましょう")
                 .font(.body)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
         }
