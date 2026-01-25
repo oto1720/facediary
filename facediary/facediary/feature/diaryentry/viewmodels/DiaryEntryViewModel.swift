@@ -31,29 +31,21 @@ class DiaryEntryViewModel: ObservableObject {
     // MARK: - Services
 
     let cameraService: CameraService
-    private let faceRecognitionService: FaceRecognitionServiceProtocol
-    private let securityService: SecurityServiceProtocol
     private let persistenceService: DataPersistenceServiceProtocol
 
     private var cancellables = Set<AnyCancellable>()
-    private var referenceFaceData: FaceData?
     private var latestFrame: CVPixelBuffer?
 
     // MARK: - Initialization
 
     init(
         cameraService: CameraService = CameraService(),
-        faceRecognitionService: FaceRecognitionServiceProtocol = VisionFaceRecognitionService(),
-        securityService: SecurityServiceProtocol = KeychainSecurityService(),
         persistenceService: DataPersistenceServiceProtocol = FileSystemDataPersistenceService()
     ) {
         self.cameraService = cameraService
-        self.faceRecognitionService = faceRecognitionService
-        self.securityService = securityService
         self.persistenceService = persistenceService
 
         setupBindings()
-        loadReferenceFaceData()
     }
 
     // MARK: - Public Methods
@@ -65,7 +57,7 @@ class DiaryEntryViewModel: ObservableObject {
                 try await cameraService.setupAndStart()
             } catch {
                 await MainActor.run {
-                    errorMessage = "Failed to start camera: \(error.localizedDescription)"
+                    errorMessage = "カメラの起動に失敗しました"
                 }
             }
         }
@@ -76,10 +68,10 @@ class DiaryEntryViewModel: ObservableObject {
         cameraService.stop()
     }
 
-    /// Capture photo and analyze
-    func capturePhotoAndAnalyze() {
+    /// Capture photo
+    func capturePhoto() {
         guard let frame = latestFrame else {
-            errorMessage = "No video frame available"
+            errorMessage = "カメラの映像を取得できませんでした"
             return
         }
 
@@ -90,35 +82,34 @@ class DiaryEntryViewModel: ObservableObject {
         let context = CIContext()
 
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-            errorMessage = "Failed to create image"
+            errorMessage = "画像の作成に失敗しました"
             isProcessing = false
             return
         }
 
         let uiImage = UIImage(cgImage: cgImage)
         guard let photoData = uiImage.jpegData(compressionQuality: 0.8) else {
-            errorMessage = "Failed to convert image to data"
+            errorMessage = "画像の変換に失敗しました"
             isProcessing = false
             return
         }
 
         // Store photo data
         capturedPhotoData = photoData
-
-        // Analyze face and mood using the same frame
-        analyzeFaceAndMood(from: frame)
+        isProcessing = false
+        HapticFeedback.success()
     }
 
     /// Save diary
     func saveDiary(completion: @escaping (Bool) -> Void) {
         guard Validator.isValidDiaryText(diaryText) else {
-            errorMessage = "Invalid diary text"
+            errorMessage = "日記の内容を入力してください"
             completion(false)
             return
         }
 
         guard let photoData = capturedPhotoData else {
-            errorMessage = "No photo data captured"
+            errorMessage = "写真が撮影されていません"
             completion(false)
             return
         }
@@ -129,6 +120,20 @@ class DiaryEntryViewModel: ObservableObject {
             do {
                 // Load diary entries
                 var entries = try self.persistenceService.load()
+
+                // 今日の日記が既に存在するかチェック
+                let todayExists = entries.contains { entry in
+                    Calendar.current.isDate(entry.date, inSameDayAs: Date())
+                }
+                if todayExists {
+                    DispatchQueue.main.async {
+                        self.isProcessing = false
+                        self.errorMessage = "今日の日記は既に作成されています"
+                        HapticFeedback.error()
+                        completion(false)
+                    }
+                    return
+                }
 
                 // Create new diary entry
                 let newEntry = DiaryEntry(
@@ -151,7 +156,7 @@ class DiaryEntryViewModel: ObservableObject {
             } catch {
                 DispatchQueue.main.async {
                     self.isProcessing = false
-                    self.errorMessage = "Failed to save diary: \(error.localizedDescription)"
+                    self.errorMessage = "日記の保存に失敗しました"
                     HapticFeedback.error()
                     completion(false)
                 }
@@ -162,16 +167,8 @@ class DiaryEntryViewModel: ObservableObject {
     /// Update mood
     func updateMood(_ mood: Mood) {
         selectedMood = mood
-        // Update mood scores
-        if !moodScores.isEmpty {
-            // Update mood scores
-            var updatedScores = moodScores
-            updatedScores[mood] = 1.0
-            moodScores = updatedScores
-        } else {
-            // Set mood scores
-            moodScores = [mood: 1.0]
-        }
+        // Set mood scores
+        moodScores = [mood: 1.0]
         HapticFeedback.selection()
     }
 
@@ -185,57 +182,5 @@ class DiaryEntryViewModel: ObservableObject {
                 self?.latestFrame = frame
             }
             .store(in: &cancellables)
-    }
-
-    private func loadReferenceFaceData() {
-        do {
-            self.referenceFaceData = try securityService.loadFaceData()
-        } catch {
-            print("Failed to load reference face data: \(error.localizedDescription)")
-        }
-    }
-
-    /// Analyze face and mood from video frame
-    private func analyzeFaceAndMood(from frame: CVPixelBuffer) {
-        guard let referenceFaceData = referenceFaceData else {
-            errorMessage = "No reference face data"
-            isProcessing = false
-            return
-        }
-
-        // Convert frame to CIImage (same as registration/authentication)
-        let ciImage = CIImage(cvPixelBuffer: frame)
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let result = try self.faceRecognitionService.recognizeFace(
-                    from: ciImage,
-                    referenceFaceData: referenceFaceData
-                )
-
-                DispatchQueue.main.async {
-                    if result.isAuthenticated {
-                        // Update mood scores
-                        self.moodScores = result.moodScores
-                        self.selectedMood = MoodAnalyzer.primaryMood(from: result.moodScores)
-                        self.isProcessing = false
-                        HapticFeedback.success()
-                    } else {
-                        // Set error message
-                        self.errorMessage = "Face not recognized"
-                        self.capturedPhotoData = nil
-                        self.isProcessing = false
-                        HapticFeedback.error()
-                    }
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Failed to analyze face and mood: \(error.localizedDescription)"
-                    self.capturedPhotoData = nil
-                    self.isProcessing = false
-                    HapticFeedback.error()
-                }
-            }
-        }
     }
 }

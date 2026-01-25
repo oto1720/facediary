@@ -28,33 +28,99 @@ struct TabItem: Identifiable, Equatable {
 struct FloatingTabBar: View {
     @Binding var selectedTab: Int
     let tabs: [TabItem]
+    var onCenterButtonTap: (() -> Void)?
+    var centerButtonDisabled: Bool = false
 
     @Namespace private var animation
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(tabs) { tab in
-                TabButton(
-                    tab: tab,
-                    isSelected: selectedTab == tab.id,
-                    animation: animation
-                ) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        selectedTab = tab.id
+        ZStack {
+            // Tab Bar Background
+            HStack(spacing: 0) {
+                // Left tab
+                if let leftTab = tabs.first {
+                    TabButton(
+                        tab: leftTab,
+                        isSelected: selectedTab == leftTab.id,
+                        animation: animation
+                    ) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedTab = leftTab.id
+                        }
+                    }
+                }
+
+                // Center spacer for FAB
+                Spacer()
+                    .frame(width: 70)
+
+                // Right tab
+                if tabs.count > 1 {
+                    TabButton(
+                        tab: tabs[1],
+                        isSelected: selectedTab == tabs[1].id,
+                        animation: animation
+                    ) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedTab = tabs[1].id
+                        }
                     }
                 }
             }
+            .frame(height: 50)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(Color.AppColors.surface)
+                    .shadow(color: Color.AppColors.shadow, radius: 12, x: 0, y: 4)
+            )
+            .padding(.horizontal, 40)
+
+            // Center FAB Button
+            if let onTap = onCenterButtonTap {
+                Button(action: onTap) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: centerButtonDisabled
+                                        ? [Color.gray.opacity(0.5), Color.gray.opacity(0.3)]
+                                        : [Color.AppColors.accent, Color.AppColors.accent.opacity(0.8)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 56, height: 56)
+                            .shadow(
+                                color: centerButtonDisabled
+                                    ? Color.clear
+                                    : Color.AppColors.accent.opacity(0.4),
+                                radius: 8,
+                                x: 0,
+                                y: 4
+                            )
+
+                        Image(systemName: "plus")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .offset(y: -20)
+                .buttonStyle(FABButtonStyle())
+            }
         }
-        .frame(height: 50)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(Color.AppColors.surface)
-                .shadow(color: Color.AppColors.shadow, radius: 12, x: 0, y: 4)
-        )
-        .padding(.horizontal, 50)
         .padding(.bottom, 16)
+    }
+}
+
+// MARK: - FAB Button Style
+
+private struct FABButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
 
@@ -135,7 +201,13 @@ private struct TabButtonStyle: ButtonStyle {
                 }
                 .padding(.top, 100)
 
-                FloatingTabBar(selectedTab: $selectedTab, tabs: tabs)
+                FloatingTabBar(
+                    selectedTab: $selectedTab,
+                    tabs: tabs,
+                    onCenterButtonTap: {
+                        print("FAB tapped!")
+                    }
+                )
             }
         }
     }

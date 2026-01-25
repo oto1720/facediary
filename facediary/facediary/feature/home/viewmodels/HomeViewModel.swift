@@ -8,10 +8,12 @@ class HomeViewModel: ObservableObject {
     @Published var diaryEntries: [DiaryEntry] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var currentMonth: Date = Date()
 
     // MARK: - Services
 
     private let persistenceService: DataPersistenceServiceProtocol
+    private let calendar = Calendar.current
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -50,6 +52,26 @@ class HomeViewModel: ObservableObject {
     func deleteDiaryEntry(at offsets: IndexSet) {
         diaryEntries.remove(atOffsets: offsets)
         saveDiaryEntries()
+    }
+
+    // MARK: - Calendar Methods
+
+    func previousMonth() {
+        if let newMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) {
+            currentMonth = newMonth
+        }
+    }
+
+    func nextMonth() {
+        if let newMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) {
+            currentMonth = newMonth
+        }
+    }
+
+    func entryForDate(_ date: Date) -> DiaryEntry? {
+        diaryEntries.first { entry in
+            calendar.isDate(entry.date, inSameDayAs: date)
+        }
     }
 
     // MARK: - Private Methods

@@ -36,8 +36,10 @@ struct AnalyticsView: View {
                             moodTrendView
                         }
                         .padding()
+                        .padding(.bottom, 100)
                     } else {
                         emptyStateView
+                            .padding(.bottom, 100)
                     }
                 }
             }

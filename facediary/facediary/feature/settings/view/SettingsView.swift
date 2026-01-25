@@ -5,9 +5,6 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @Environment(\.dismiss) var dismiss
 
-    /// Callback for when face data is deleted
-    var onFaceDataDeleted: (() -> Void)?
-
     var body: some View {
         NavigationStack {
             List {
@@ -45,19 +42,6 @@ struct SettingsView: View {
                         HStack {
                             Image(systemName: "trash")
                             Text("Delete All Diaries")
-                        }
-                    }
-                }
-
-                // Security Section
-                Section(header: Text("Security")) {
-                    Button(role: .destructive, action: {
-                        viewModel.deleteFaceData()
-                        onFaceDataDeleted?()
-                    }) {
-                        HStack {
-                            Image(systemName: "faceid")
-                            Text("Reset Face Data")
                         }
                     }
                 }
