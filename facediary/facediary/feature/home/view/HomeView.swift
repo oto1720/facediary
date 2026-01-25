@@ -6,21 +6,33 @@ struct HomeView: View {
     @State private var showingSettings = false
     @State private var selectedTab = 0
 
-    var body: some View {
-        TabView(selection: $selectedTab) {
-            diaryListTab
-                .tabItem {
-                    Label("日記", systemImage: "book")
-                }
-                .tag(0)
+    private let tabs = [
+        TabItem(id: 0, icon: "book", title: "日記"),
+        TabItem(id: 1, icon: "chart.bar", title: "分析")
+    ]
 
-            AnalyticsView()
-                .tabItem {
-                    Label("分析", systemImage: "chart.bar")
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            // Tab Content
+            Group {
+                switch selectedTab {
+                case 0:
+                    diaryListTab
+                        .transition(.opacity)
+                case 1:
+                    AnalyticsView()
+                        .transition(.opacity)
+                default:
+                    EmptyView()
                 }
-                .tag(1)
+            }
+            .animation(.easeInOut(duration: 0.2), value: selectedTab)
+            .ignoresSafeArea(.container, edges: .bottom)
+
+            // Floating Tab Bar
+            FloatingTabBar(selectedTab: $selectedTab, tabs: tabs)
+                .ignoresSafeArea(.container, edges: .bottom)
         }
-        .tint(Color.appAccent)
     }
 
     // MARK: - Tab Views
@@ -42,8 +54,6 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("FaceDiary")
-            .toolbarColorScheme(.light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
@@ -65,7 +75,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .toolbarBackground(Color.appSurface, for: .navigationBar)
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showingDiaryCreate) {
                 DiaryEntryCreateView(onComplete: {
@@ -133,6 +143,9 @@ struct HomeView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 80) // Floating tab bar spacing
+        }
     }
 }
 

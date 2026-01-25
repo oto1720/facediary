@@ -8,34 +8,21 @@ struct AuthenticationView: View {
 
     var body: some View {
         ZStack {
-            // カメラプレビュー
-            if let session = viewModel.cameraService.previewLayer.session {
-                CameraPreviewView(session: session)
-                    .ignoresSafeArea()
-            }
+            Color.appBackground
+                .ignoresSafeArea()
 
-            // UIオーバーレイ
-            VStack {
+            VStack(spacing: 32) {
                 Spacer()
 
                 // 状態に応じたビューを表示
                 switch viewModel.authenticationState {
-                case .ready, .scanning:
-                    scanningInstructionsView
+                case .ready:
+                    readyView
                 case .biometricAuth:
-                    ProgressView("Face ID認証中...")
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .foregroundColor(.white)
+                    ProgressView("認証中...")
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .foregroundColor(.primary)
                         .padding()
-                        .background(Color.black.opacity(0.5))
-                        .cornerRadius(10)
-                case .processing:
-                    ProgressView("顔認証中...")
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.black.opacity(0.5))
-                        .cornerRadius(10)
                 case .success:
                     successView
                 case .failed(let message):
@@ -43,114 +30,95 @@ struct AuthenticationView: View {
                 }
 
                 Spacer()
-
-                // 認証中の場合のみボタンを表示
-                if case .scanning = viewModel.authenticationState {
-                    authenticateButton
-                        .padding(.bottom, 40)
-                }
             }
+            .padding()
         }
         .onAppear {
-            viewModel.startCamera()
-        }
-        .onDisappear {
-            viewModel.stopCamera()
+            // 画面表示時に自動で認証開始
+            viewModel.authenticate()
         }
     }
 
     // MARK: - Subviews
 
-    private var scanningInstructionsView: some View {
-        VStack {
+    private var readyView: some View {
+        VStack(spacing: 24) {
             Image(systemName: "faceid")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 60, height: 60)
-                .foregroundColor(.white)
-            Text("顔認証を開始してください")
-                .font(.title)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.top, 8)
-            Text("顔をカメラに合わせてください")
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.top, 4)
-        }
-        .padding()
-        .background(Color.black.opacity(0.5))
-        .cornerRadius(15)
-    }
+                .frame(width: 80, height: 80)
+                .foregroundColor(.accentColor)
 
-    private var authenticateButton: some View {
-        Button(action: {
-            viewModel.authenticate()
-        }) {
-            ZStack {
-                Circle()
-                    .strokeBorder(Color.white, lineWidth: 4)
-                    .frame(width: 70, height: 70)
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 60, height: 60)
+            Text("Face IDで認証")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Button(action: {
+                viewModel.authenticate()
+            }) {
+                Text("認証する")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .cornerRadius(12)
             }
+            .padding(.horizontal, 40)
         }
     }
 
     private var successView: some View {
-        VStack {
+        VStack(spacing: 16) {
             Image(systemName: "checkmark.circle.fill")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80, height: 80)
                 .foregroundColor(.green)
+
             Text("認証成功")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.top)
         }
-        .padding(30)
-        .background(Color.black.opacity(0.6))
-        .cornerRadius(20)
         .onAppear {
-            // 1秒後に認証成功時のコールバックを呼ぶ
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // 0.5秒後に認証成功時のコールバックを呼ぶ
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 onAuthenticationSuccess?()
             }
         }
     }
 
     private func failedView(message: String) -> some View {
-        VStack {
+        VStack(spacing: 16) {
             Image(systemName: "xmark.circle.fill")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80, height: 80)
                 .foregroundColor(.red)
+
             Text("認証失敗")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.top)
+
             Text(message)
                 .font(.body)
-                .foregroundColor(.white)
+                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding()
 
-            Button("再試行") {
+            Button(action: {
                 viewModel.retry()
+                viewModel.authenticate()
+            }) {
+                Text("再試行")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.accentColor)
+                    .cornerRadius(12)
             }
-            .padding()
-            .background(Color.white)
-            .foregroundColor(.black)
-            .cornerRadius(10)
+            .padding(.horizontal, 40)
         }
-        .padding(30)
-        .background(Color.black.opacity(0.6))
-        .cornerRadius(20)
     }
 }
 

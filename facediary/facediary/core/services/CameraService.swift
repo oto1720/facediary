@@ -5,10 +5,21 @@ import Combine
 import UIKit
 
 /// カメラサービスに関するエラー
-enum CameraError: Error {
+enum CameraError: LocalizedError {
     case permissionDenied
     case setupFailed(String)
     case captureFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .permissionDenied:
+            return "カメラへのアクセスが拒否されました。設定アプリからカメラの使用を許可してください。"
+        case .setupFailed(let message):
+            return "カメラのセットアップに失敗しました: \(message)"
+        case .captureFailed:
+            return "写真の撮影に失敗しました。"
+        }
+    }
 }
 
 /// カメラの制御と映像フレームの提供を行うサービス

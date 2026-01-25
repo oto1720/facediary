@@ -41,9 +41,7 @@ struct AnalyticsView: View {
                     }
                 }
             }
-            .navigationTitle("分析")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color.appSurface, for: .navigationBar)
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
         }
     }
