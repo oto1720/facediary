@@ -5,6 +5,8 @@ struct HomeView: View {
     @State private var showingDiaryCreate = false
     @State private var showingSettings = false
     @State private var selectedTab = 0
+    @State private var selectedEntry: DiaryEntry?
+    @State private var showingDetail = false
 
     private let tabs = [
         TabItem(id: 0, icon: "book", title: "日記"),
@@ -43,14 +45,24 @@ struct HomeView: View {
                 Color.appBackground
                     .ignoresSafeArea()
 
-                VStack {
-                    if viewModel.isLoading {
-                        ProgressView("読み込み中...")
-                            .tint(Color.appAccent)
-                    } else if viewModel.diaryEntries.isEmpty {
-                        emptyStateView
-                    } else {
-                        diaryListView
+                if viewModel.isLoading {
+                    ProgressView("読み込み中...")
+                        .tint(Color.appAccent)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // カレンダー
+                            CalendarView(viewModel: viewModel) { entry in
+                                selectedEntry = entry
+                                showingDetail = true
+                            }
+
+                            // 最近の日記セクション
+                            if !viewModel.diaryEntries.isEmpty {
+                                recentEntriesSection
+                            }
+                        }
+                        .padding(.bottom, 100)
                     }
                 }
             }
@@ -85,78 +97,49 @@ struct HomeView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
+            .navigationDestination(isPresented: $showingDetail) {
+                if let entry = selectedEntry {
+                    DiaryEntryDetailView(entry: entry)
+                }
+            }
         }
     }
 
-    // MARK: - Subviews
+    // MARK: - Recent Entries Section
 
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "book.closed")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 80, height: 80)
-                .foregroundColor(Color.appTextSecondary)
-
-            Text("日記がまだありません")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(Color.appTextPrimary)
-
-            Text("+ボタンをタップして\n今日の気分を記録しましょう")
-                .font(.body)
-                .foregroundColor(Color.appTextSecondary)
-                .multilineTextAlignment(.center)
-
-            Button(action: {
-                showingDiaryCreate = true
-            }) {
-                HStack {
-                    Image(systemName: "camera.fill")
-                    Text("日記を作成")
-                }
+    private var recentEntriesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("最近の日記")
                 .font(.headline)
-                .foregroundColor(Color.appSurface)
-                .padding(.horizontal, 30)
-                .padding(.vertical, 15)
-                .background(Color.appAccent)
-                .cornerRadius(25)
-                .shadow(color: Color.AppColors.shadow, radius: 5)
-            }
-            .padding(.top, 20)
-        }
-    }
+                .foregroundColor(Color.appTextPrimary)
+                .padding(.horizontal)
 
-    private var diaryListView: some View {
-        List {
-            ForEach(viewModel.diaryEntries) { entry in
-                NavigationLink(destination: DiaryEntryDetailView(entry: entry)) {
-                    DiaryEntryRow(entry: entry)
+            VStack(spacing: 8) {
+                ForEach(viewModel.diaryEntries.prefix(3)) { entry in
+                    Button {
+                        selectedEntry = entry
+                        showingDetail = true
+                    } label: {
+                        DiaryEntryRow(entry: entry)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
             }
-            .onDelete(perform: viewModel.deleteDiaryEntry)
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(Color.appBackground)
-        .safeAreaInset(edge: .bottom) {
-            Color.clear.frame(height: 80) // Floating tab bar spacing
+            .padding(.horizontal)
         }
     }
 }
 
-// MARK: - Diary Entry Row View
+// MARK: - Diary Entry Row
 
 struct DiaryEntryRow: View {
     let entry: DiaryEntry
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             if let primaryMood = entry.primaryMood {
                 Text(primaryMood.emoji)
-                    .font(.system(size: 40))
+                    .font(.system(size: 32))
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -165,15 +148,20 @@ struct DiaryEntryRow: View {
                     .foregroundColor(Color.appTextSecondary)
 
                 Text(entry.text)
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundColor(Color.appTextPrimary)
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
             }
 
             Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(Color.appTextSecondary)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
         .background(Color.appSurface)
         .cornerRadius(12)
         .shadow(color: Color.AppColors.shadow, radius: 2, x: 0, y: 1)
