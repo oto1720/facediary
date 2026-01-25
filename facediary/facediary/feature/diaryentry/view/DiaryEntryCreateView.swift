@@ -23,7 +23,7 @@ struct DiaryEntryCreateView: View {
                 if viewModel.isProcessing {
                     Color.black.opacity(0.5)
                         .ignoresSafeArea()
-                    ProgressView("Processing...")
+                    ProgressView("処理中...")
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .foregroundColor(.white)
                         .padding()
@@ -31,16 +31,16 @@ struct DiaryEntryCreateView: View {
                         .cornerRadius(10)
                 }
             }
-            .navigationTitle("Diary Entry")
+            .navigationTitle("日記を書く")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button("キャンセル") {
                         dismiss()
                     }
                 }
             }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
                     viewModel.errorMessage = nil
                 }
@@ -79,10 +79,10 @@ struct DiaryEntryCreateView: View {
 
                 // Mood selection
                 VStack(spacing: 8) {
-                    Text("Take a Photo")
+                    Text("写真を撮影")
                         .font(.headline)
                         .foregroundColor(.white)
-                    Text("Capture your moment")
+                    Text("今の気持ちを写真に残しましょう")
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.8))
                 }
@@ -129,7 +129,7 @@ struct DiaryEntryCreateView: View {
 
                 // Diary text input
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Diary Entry")
+                    Text("日記")
                         .font(.headline)
                         .padding(.horizontal)
 
@@ -145,7 +145,7 @@ struct DiaryEntryCreateView: View {
                 Button(action: {
                     viewModel.saveDiary { _ in }
                 }) {
-                    Text("Save")
+                    Text("保存")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -162,11 +162,11 @@ struct DiaryEntryCreateView: View {
 
     private var moodSelectorView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Mood Selection")
+            Text("今の気分")
                 .font(.headline)
                 .padding(.horizontal)
 
-            Text("Select the mood that best describes your current feeling")
+            Text("今の気持ちに近いものを選んでください")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)

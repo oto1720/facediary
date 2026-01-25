@@ -57,7 +57,7 @@ class DiaryEntryViewModel: ObservableObject {
                 try await cameraService.setupAndStart()
             } catch {
                 await MainActor.run {
-                    errorMessage = "Failed to start camera: \(error.localizedDescription)"
+                    errorMessage = "カメラの起動に失敗しました"
                 }
             }
         }
@@ -71,7 +71,7 @@ class DiaryEntryViewModel: ObservableObject {
     /// Capture photo
     func capturePhoto() {
         guard let frame = latestFrame else {
-            errorMessage = "No video frame available"
+            errorMessage = "カメラの映像を取得できませんでした"
             return
         }
 
@@ -82,14 +82,14 @@ class DiaryEntryViewModel: ObservableObject {
         let context = CIContext()
 
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-            errorMessage = "Failed to create image"
+            errorMessage = "画像の作成に失敗しました"
             isProcessing = false
             return
         }
 
         let uiImage = UIImage(cgImage: cgImage)
         guard let photoData = uiImage.jpegData(compressionQuality: 0.8) else {
-            errorMessage = "Failed to convert image to data"
+            errorMessage = "画像の変換に失敗しました"
             isProcessing = false
             return
         }
@@ -103,13 +103,13 @@ class DiaryEntryViewModel: ObservableObject {
     /// Save diary
     func saveDiary(completion: @escaping (Bool) -> Void) {
         guard Validator.isValidDiaryText(diaryText) else {
-            errorMessage = "Invalid diary text"
+            errorMessage = "日記の内容を入力してください"
             completion(false)
             return
         }
 
         guard let photoData = capturedPhotoData else {
-            errorMessage = "No photo data captured"
+            errorMessage = "写真が撮影されていません"
             completion(false)
             return
         }
@@ -142,7 +142,7 @@ class DiaryEntryViewModel: ObservableObject {
             } catch {
                 DispatchQueue.main.async {
                     self.isProcessing = false
-                    self.errorMessage = "Failed to save diary: \(error.localizedDescription)"
+                    self.errorMessage = "日記の保存に失敗しました"
                     HapticFeedback.error()
                     completion(false)
                 }
