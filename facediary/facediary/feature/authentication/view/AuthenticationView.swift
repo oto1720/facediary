@@ -88,6 +88,10 @@ struct AuthenticationView: View {
         }
     }
 
+    /// Constructs the view displayed when authentication fails.
+    /// - Parameters:
+    ///   - message: The error message displayed beneath the failure title.
+    /// - Returns: A view containing a red failure icon, the title "認証失敗", the provided message, and a "再試行" button that triggers a retry and restarts authentication.
     private func failedView(message: String) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "xmark.circle.fill")

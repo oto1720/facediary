@@ -29,7 +29,11 @@ class AuthenticationViewModel: ObservableObject {
 
     // MARK: - Public Methods
 
-    /// 認証（Face ID / Touch ID）
+    /// Starts a biometric authentication flow and updates `authenticationState` based on the outcome.
+    /// 
+    /// In DEBUG builds this immediately sets `authenticationState` to `.success`. In non-DEBUG builds it sets `authenticationState` to `.biometricAuth`, invokes the biometric authenticator, and then:
+    /// - sets `authenticationState` to `.success` when authentication succeeds,
+    /// - sets `authenticationState` to `.failed(...)` with a user-facing message when authentication fails, mapping `BiometricAuthenticationError` cases to specific messages, or using a generic message that includes the error's `localizedDescription` for other errors.
     func authenticate() {
         // デバッグビルド時は認証をスキップ
         #if DEBUG
@@ -76,7 +80,7 @@ class AuthenticationViewModel: ObservableObject {
         }
     }
 
-    /// 認証の再試行
+    /// Resets the authentication state to ready so a new authentication attempt can begin.
     func retry() {
         authenticationState = .ready
     }

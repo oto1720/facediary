@@ -104,6 +104,9 @@ private struct TabButton: View {
 // MARK: - Tab Button Style
 
 private struct TabButtonStyle: ButtonStyle {
+    /// Applies the tab button's pressed-state visual effects to the provided label.
+    /// - Parameter configuration: The button style configuration containing the label and pressed state.
+    /// - Returns: A view that presents `configuration.label`, uses a rectangular hit area, scales to 0.92 while pressed, and animates scale changes with an ease-in-out timing of 0.15 seconds.
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())

@@ -20,7 +20,9 @@ class AppViewModel: ObservableObject {
         }
     }
 
-    /// 認証が成功した時の処理
+    /// Transition the application state to authenticated.
+    /// 
+    /// Sets `appState` to `.authenticated`, indicating successful authentication and readiness to show the main interface.
     func onAuthenticationSucceeded() {
         appState = .authenticated
     }
