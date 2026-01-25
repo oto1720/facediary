@@ -37,9 +37,20 @@ struct HomeView: View {
             .animation(.easeInOut(duration: 0.2), value: selectedTab)
             .ignoresSafeArea(.container, edges: .bottom)
 
-            // Floating Tab Bar
-            FloatingTabBar(selectedTab: $selectedTab, tabs: tabs)
-                .ignoresSafeArea(.container, edges: .bottom)
+            // Floating Tab Bar with FAB
+            FloatingTabBar(
+                selectedTab: $selectedTab,
+                tabs: tabs,
+                onCenterButtonTap: {
+                    if hasTodayEntry {
+                        showingAlreadyExistsAlert = true
+                    } else {
+                        showingDiaryCreate = true
+                    }
+                },
+                centerButtonDisabled: hasTodayEntry
+            )
+            .ignoresSafeArea(.container, edges: .bottom)
         }
     }
 
@@ -68,7 +79,7 @@ struct HomeView: View {
                                 recentEntriesSection
                             }
                         }
-                        .padding(.bottom, 100)
+                        .padding(.bottom, 120)
                     }
                 }
             }
@@ -79,20 +90,6 @@ struct HomeView: View {
                     }) {
                         Image(systemName: "gearshape")
                             .font(.title3)
-                            .foregroundColor(Color.AppColors.textPrimary)
-                    }
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        if hasTodayEntry {
-                            showingAlreadyExistsAlert = true
-                        } else {
-                            showingDiaryCreate = true
-                        }
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
                             .foregroundColor(Color.AppColors.textPrimary)
                     }
                 }
