@@ -8,84 +8,96 @@ struct DiaryEntryDetailView: View {
     @State private var showingDeleteAlert = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Date and time
-                HStack {
-                    Text(entry.date.formatted(as: Constants.dateFormat))
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Spacer()
-                    Text(entry.date.formatted(as: Constants.timeFormat))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal)
+        ZStack {
+            Color.appBackground
+                .ignoresSafeArea()
 
-                // Photo preview
-                if let photoData = entry.photoData,
-                   let uiImage = UIImage(data: photoData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 300)
-                        .clipped()
-                        .cornerRadius(15)
-                        .padding(.horizontal)
-                }
-
-                // Mood section
-                moodSectionView
-
-                Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Date and time
+                    HStack {
+                        Text(entry.date.formatted(as: Constants.dateFormat))
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.appTextPrimary)
+                        Spacer()
+                        Text(entry.date.formatted(as: Constants.timeFormat))
+                            .font(.subheadline)
+                            .foregroundColor(Color.appTextSecondary)
+                    }
                     .padding(.horizontal)
 
-                // Diary text
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Diary Entry")
-                        .font(.headline)
-                    Text(entry.text)
-                        .font(.body)
-                        .lineSpacing(4)
-                }
-                .padding(.horizontal)
+                    // Photo preview
+                    if let photoData = entry.photoData,
+                       let uiImage = UIImage(data: photoData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 300)
+                            .clipped()
+                            .cornerRadius(15)
+                            .padding(.horizontal)
+                    }
 
-                Spacer(minLength: 40)
+                    // Mood section
+                    moodSectionView
+
+                    Divider()
+                        .background(Color.appBorder)
+                        .padding(.horizontal)
+
+                    // Diary text
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("日記")
+                            .font(.headline)
+                            .foregroundColor(Color.appTextPrimary)
+                        Text(entry.text)
+                            .font(.body)
+                            .foregroundColor(Color.appTextPrimary)
+                            .lineSpacing(4)
+                    }
+                    .padding(.horizontal)
+
+                    Spacer(minLength: 40)
+                }
+                .padding(.top)
             }
-            .padding(.top)
         }
-        .navigationTitle("Diary Entry")
+        .navigationTitle("日記の詳細")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(Color.appBackground, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button(action: {
                         showingEditSheet = true
                     }) {
-                        Label("Edit", systemImage: "pencil")
+                        Label("編集", systemImage: "pencil")
                     }
 
                     Button(role: .destructive, action: {
                         showingDeleteAlert = true
                     }) {
-                        Label("Delete", systemImage: "trash")
+                        Label("削除", systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
+                        .foregroundColor(Color.appTextPrimary)
                 }
             }
         }
         .sheet(isPresented: $showingEditSheet) {
-            Text("Edit Diary Entry")
+            Text("日記を編集")
         }
-        .alert("Delete Diary Entry", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
+        .alert("日記を削除", isPresented: $showingDeleteAlert) {
+            Button("キャンセル", role: .cancel) {}
+            Button("削除", role: .destructive) {
                 // Delete diary entry
             }
         } message: {
-            Text("Are you sure you want to delete this diary entry?")
+            Text("この日記を削除してもよろしいですか？")
         }
     }
 
@@ -93,8 +105,9 @@ struct DiaryEntryDetailView: View {
 
     private var moodSectionView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Mood")
+            Text("気分")
                 .font(.headline)
+                .foregroundColor(Color.appTextPrimary)
                 .padding(.horizontal)
 
             if let primaryMood = entry.primaryMood {
@@ -106,6 +119,7 @@ struct DiaryEntryDetailView: View {
                         Text(primaryMood.rawValue)
                             .font(.title3)
                             .fontWeight(.semibold)
+                            .foregroundColor(Color.appTextPrimary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -119,9 +133,9 @@ struct DiaryEntryDetailView: View {
 
             // Mood scores
             if entry.moodScores.count > 1 {
-                Text("Mood Scores")
+                Text("気分スコア")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color.appTextSecondary)
                     .padding(.horizontal)
 
                 let sortedMoods = MoodAnalyzer.sortedMoods(from: entry.moodScores)
@@ -141,16 +155,17 @@ struct DiaryEntryDetailView: View {
                 .font(.title2)
             Text(mood.rawValue)
                 .font(.body)
+                .foregroundColor(Color.appTextPrimary)
             Spacer()
             Text(MoodAnalyzer.percentageString(from: score))
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.appTextSecondary)
 
             // Mood score bar
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(.systemGray5))
+                        .fill(Color.appBackgroundSecondary)
                         .frame(height: 8)
 
                     RoundedRectangle(cornerRadius: 4)
@@ -170,7 +185,7 @@ struct DiaryEntryDetailView_Previews: PreviewProvider {
             DiaryEntryDetailView(
                 entry: DiaryEntry(
                     date: Date(),
-                    text: "Diary Entry",
+                    text: "今日はとても良い一日でした。",
                     photoData: nil,
                     moodScores: [.happiness: 0.8, .calm: 0.2]
                 )
