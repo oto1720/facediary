@@ -121,6 +121,20 @@ class DiaryEntryViewModel: ObservableObject {
                 // Load diary entries
                 var entries = try self.persistenceService.load()
 
+                // 今日の日記が既に存在するかチェック
+                let todayExists = entries.contains { entry in
+                    Calendar.current.isDate(entry.date, inSameDayAs: Date())
+                }
+                if todayExists {
+                    DispatchQueue.main.async {
+                        self.isProcessing = false
+                        self.errorMessage = "今日の日記は既に作成されています"
+                        HapticFeedback.error()
+                        completion(false)
+                    }
+                    return
+                }
+
                 // Create new diary entry
                 let newEntry = DiaryEntry(
                     date: Date(),

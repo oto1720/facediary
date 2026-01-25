@@ -7,6 +7,12 @@ struct HomeView: View {
     @State private var selectedTab = 0
     @State private var selectedEntry: DiaryEntry?
     @State private var showingDetail = false
+    @State private var showingAlreadyExistsAlert = false
+
+    // 今日の日記が存在するかチェック
+    private var hasTodayEntry: Bool {
+        viewModel.entryForDate(Date()) != nil
+    }
 
     private let tabs = [
         TabItem(id: 0, icon: "book", title: "日記"),
@@ -79,7 +85,11 @@ struct HomeView: View {
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        showingDiaryCreate = true
+                        if hasTodayEntry {
+                            showingAlreadyExistsAlert = true
+                        } else {
+                            showingDiaryCreate = true
+                        }
                     }) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
@@ -96,6 +106,11 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
+            }
+            .alert("今日の日記", isPresented: $showingAlreadyExistsAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("今日の日記は既に作成されています")
             }
             .navigationDestination(isPresented: $showingDetail) {
                 if let entry = selectedEntry {
