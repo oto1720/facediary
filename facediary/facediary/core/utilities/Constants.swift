@@ -9,26 +9,12 @@ enum Constants {
     static let appName = "FaceDiary"
     static let bundleIdentifier = "com.example.facediary"
 
-    // MARK: - Face Recognition
-
-    /// Minimum face match confidence (0.0 ~ 1.0)
-    static let minimumFaceMatchConfidence: Double = 0.7
-
-    /// Recommended face registration count
-    static let recommendedFaceRegistrationCount = 5
-
     // MARK: - Mood Analysis
 
     /// Minimum mood confidence (0.0 ~ 1.0)
     static let minimumMoodConfidence: Double = 0.3
 
     // MARK: - Storage
-
-    /// Face data keychain service
-    static let faceDataKeychainService = "com.example.facediary.FaceData"
-
-    /// Face data keychain account
-    static let faceDataKeychainAccount = "currentUser"
 
     /// Diary entries file name
     static let diaryEntriesFileName = "diaryEntries.json"

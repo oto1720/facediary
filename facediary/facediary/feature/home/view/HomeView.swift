@@ -83,9 +83,7 @@ struct HomeView: View {
                 })
             }
             .sheet(isPresented: $showingSettings) {
-                SettingsView(onFaceDataDeleted: {
-                    // Handle face data deletion if needed
-                })
+                SettingsView()
             }
         }
     }

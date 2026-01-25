@@ -79,10 +79,10 @@ struct DiaryEntryCreateView: View {
 
                 // Mood selection
                 VStack(spacing: 8) {
-                    Text("Mood Selection")
+                    Text("Take a Photo")
                         .font(.headline)
                         .foregroundColor(.white)
-                    Text("Select your mood from the list")
+                    Text("Capture your moment")
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.8))
                 }
@@ -93,7 +93,7 @@ struct DiaryEntryCreateView: View {
 
                 // Capture photo button
                 Button(action: {
-                    viewModel.capturePhotoAndAnalyze()
+                    viewModel.capturePhoto()
                 }) {
                     ZStack {
                         Circle()
@@ -124,10 +124,8 @@ struct DiaryEntryCreateView: View {
                         .padding(.horizontal)
                 }
 
-                // Mood selector
-                if !viewModel.moodScores.isEmpty {
-                    moodSelectorView
-                }
+                // Mood selector (always shown)
+                moodSelectorView
 
                 // Diary text input
                 VStack(alignment: .leading, spacing: 8) {
@@ -168,19 +166,7 @@ struct DiaryEntryCreateView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            // Mood list
-            let sortedMoods = MoodAnalyzer.sortedMoods(from: viewModel.moodScores)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(sortedMoods, id: \.mood) { item in
-                        moodCard(mood: item.mood, score: item.score)
-                    }
-                }
-                .padding(.horizontal)
-            }
-
-            // Mood explanation
-            Text("Select the mood that best describes your current mood")
+            Text("Select the mood that best describes your current feeling")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
@@ -188,33 +174,7 @@ struct DiaryEntryCreateView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(Mood.allCases, id: \.self) { mood in
-                        Button(action: {
-                            viewModel.updateMood(mood)
-                        }) {
-                            VStack {
-                                Text(mood.emoji)
-                                    .font(.system(size: 30))
-                                Text(mood.rawValue)
-                                    .font(.caption)
-                                    .foregroundColor(.primary)
-                            }
-                            .padding(8)
-                            .background(
-                                viewModel.selectedMood == mood
-                                    ? Color.blue.opacity(0.2)
-                                    : Color(.systemGray6)
-                            )
-                            .cornerRadius(10)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(
-                                        viewModel.selectedMood == mood
-                                            ? Color.blue
-                                            : Color.clear,
-                                        lineWidth: 2
-                                    )
-                            )
-                        }
+                        moodCard(mood: mood)
                     }
                 }
                 .padding(.horizontal)
@@ -222,16 +182,13 @@ struct DiaryEntryCreateView: View {
         }
     }
 
-    private func moodCard(mood: Mood, score: Double) -> some View {
+    private func moodCard(mood: Mood) -> some View {
         VStack(spacing: 8) {
             Text(mood.emoji)
                 .font(.system(size: 40))
             Text(mood.rawValue)
                 .font(.caption)
                 .fontWeight(.medium)
-            Text(MoodAnalyzer.percentageString(from: score))
-                .font(.caption2)
-                .foregroundColor(.secondary)
         }
         .padding()
         .frame(width: 100)

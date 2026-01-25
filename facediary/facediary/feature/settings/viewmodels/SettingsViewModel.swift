@@ -13,32 +13,17 @@ class SettingsViewModel: ObservableObject {
 
     // MARK: - Services
 
-    private let securityService: SecurityServiceProtocol
     private let persistenceService: DataPersistenceServiceProtocol
 
     // MARK: - Initialization
 
     init(
-        securityService: SecurityServiceProtocol = KeychainSecurityService(),
         persistenceService: DataPersistenceServiceProtocol = FileSystemDataPersistenceService()
     ) {
-        self.securityService = securityService
         self.persistenceService = persistenceService
     }
 
     // MARK: - Public Methods
-
-    /// Delete all face data
-    func deleteFaceData() {
-        do {
-            try securityService.deleteFaceData()
-            successMessage = "Face data has been deleted."
-            HapticFeedback.success()
-        } catch {
-            errorMessage = "Failed to delete face data: \(error.localizedDescription)"
-            HapticFeedback.error()
-        }
-    }
 
     /// Delete all diary entries
     func deleteAllDiaries() {

@@ -31,29 +31,21 @@ class DiaryEntryViewModel: ObservableObject {
     // MARK: - Services
 
     let cameraService: CameraService
-    private let faceRecognitionService: FaceRecognitionServiceProtocol
-    private let securityService: SecurityServiceProtocol
     private let persistenceService: DataPersistenceServiceProtocol
 
     private var cancellables = Set<AnyCancellable>()
-    private var referenceFaceData: FaceData?
     private var latestFrame: CVPixelBuffer?
 
     // MARK: - Initialization
 
     init(
         cameraService: CameraService = CameraService(),
-        faceRecognitionService: FaceRecognitionServiceProtocol = VisionFaceRecognitionService(),
-        securityService: SecurityServiceProtocol = KeychainSecurityService(),
         persistenceService: DataPersistenceServiceProtocol = FileSystemDataPersistenceService()
     ) {
         self.cameraService = cameraService
-        self.faceRecognitionService = faceRecognitionService
-        self.securityService = securityService
         self.persistenceService = persistenceService
 
         setupBindings()
-        loadReferenceFaceData()
     }
 
     // MARK: - Public Methods
@@ -76,8 +68,8 @@ class DiaryEntryViewModel: ObservableObject {
         cameraService.stop()
     }
 
-    /// Capture photo and analyze
-    func capturePhotoAndAnalyze() {
+    /// Capture photo
+    func capturePhoto() {
         guard let frame = latestFrame else {
             errorMessage = "No video frame available"
             return
@@ -104,9 +96,8 @@ class DiaryEntryViewModel: ObservableObject {
 
         // Store photo data
         capturedPhotoData = photoData
-
-        // Analyze face and mood using the same frame
-        analyzeFaceAndMood(from: frame)
+        isProcessing = false
+        HapticFeedback.success()
     }
 
     /// Save diary
@@ -162,16 +153,8 @@ class DiaryEntryViewModel: ObservableObject {
     /// Update mood
     func updateMood(_ mood: Mood) {
         selectedMood = mood
-        // Update mood scores
-        if !moodScores.isEmpty {
-            // Update mood scores
-            var updatedScores = moodScores
-            updatedScores[mood] = 1.0
-            moodScores = updatedScores
-        } else {
-            // Set mood scores
-            moodScores = [mood: 1.0]
-        }
+        // Set mood scores
+        moodScores = [mood: 1.0]
         HapticFeedback.selection()
     }
 
@@ -185,57 +168,5 @@ class DiaryEntryViewModel: ObservableObject {
                 self?.latestFrame = frame
             }
             .store(in: &cancellables)
-    }
-
-    private func loadReferenceFaceData() {
-        do {
-            self.referenceFaceData = try securityService.loadFaceData()
-        } catch {
-            print("Failed to load reference face data: \(error.localizedDescription)")
-        }
-    }
-
-    /// Analyze face and mood from video frame
-    private func analyzeFaceAndMood(from frame: CVPixelBuffer) {
-        guard let referenceFaceData = referenceFaceData else {
-            errorMessage = "No reference face data"
-            isProcessing = false
-            return
-        }
-
-        // Convert frame to CIImage (same as registration/authentication)
-        let ciImage = CIImage(cvPixelBuffer: frame)
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let result = try self.faceRecognitionService.recognizeFace(
-                    from: ciImage,
-                    referenceFaceData: referenceFaceData
-                )
-
-                DispatchQueue.main.async {
-                    if result.isAuthenticated {
-                        // Update mood scores
-                        self.moodScores = result.moodScores
-                        self.selectedMood = MoodAnalyzer.primaryMood(from: result.moodScores)
-                        self.isProcessing = false
-                        HapticFeedback.success()
-                    } else {
-                        // Set error message
-                        self.errorMessage = "Face not recognized"
-                        self.capturedPhotoData = nil
-                        self.isProcessing = false
-                        HapticFeedback.error()
-                    }
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Failed to analyze face and mood: \(error.localizedDescription)"
-                    self.capturedPhotoData = nil
-                    self.isProcessing = false
-                    HapticFeedback.error()
-                }
-            }
-        }
     }
 }
