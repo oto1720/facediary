@@ -54,8 +54,6 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("FaceDiary")
-            .toolbarColorScheme(.light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
@@ -77,7 +75,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .toolbarBackground(Color.appSurface, for: .navigationBar)
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .sheet(isPresented: $showingDiaryCreate) {
                 DiaryEntryCreateView(onComplete: {
