@@ -18,14 +18,8 @@ struct ContentView: View {
                 ProgressView("読み込み中...")
                     .progressViewStyle(CircularProgressViewStyle())
 
-            case .onboarding:
-                // 顔未登録 → オンボーディング画面
-                FaceRegistrationView(onComplete: {
-                    appViewModel.onFaceRegistrationCompleted()
-                })
-
             case .authentication:
-                // 顔登録済み → 認証画面
+                // 認証画面
                 AuthenticationView(onAuthenticationSuccess: {
                     appViewModel.onAuthenticationSucceeded()
                 })
