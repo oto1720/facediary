@@ -7,80 +7,106 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // App Info Section
-                Section(header: Text("App Info")) {
-                    HStack {
-                        Text("App Name")
-                        Spacer()
-                        Text(Constants.appName)
-                            .foregroundColor(.secondary)
-                    }
+            ZStack {
+                Color.appBackground
+                    .ignoresSafeArea()
 
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text(viewModel.getAppVersion())
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                // Data Management Section
-                Section(header: Text("Data Management")) {
-                    Button(action: {
-                        viewModel.showingExportSheet = true
-                    }) {
+                List {
+                    // App Info Section
+                    Section(header: Text("アプリ情報")
+                        .foregroundColor(Color.appTextSecondary)) {
                         HStack {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Export Diary Entries")
-                        }
-                    }
-
-                    Button(role: .destructive, action: {
-                        viewModel.showingDeleteConfirmation = true
-                    }) {
-                        HStack {
-                            Image(systemName: "trash")
-                            Text("Delete All Diaries")
-                        }
-                    }
-                }
-
-                // About Section
-                Section(header: Text("About")) {
-                    Link(destination: URL(string: "https://example.com/privacy")!) {
-                        HStack {
-                            Image(systemName: "lock.shield")
-                            Text("Privacy Policy")
+                            Text("アプリ名")
+                                .foregroundColor(Color.appTextPrimary)
                             Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text(Constants.appName)
+                                .foregroundColor(Color.appTextSecondary)
                         }
+                        .listRowBackground(Color.appSurface)
+
+                        HStack {
+                            Text("バージョン")
+                                .foregroundColor(Color.appTextPrimary)
+                            Spacer()
+                            Text(viewModel.getAppVersion())
+                                .foregroundColor(Color.appTextSecondary)
+                        }
+                        .listRowBackground(Color.appSurface)
                     }
 
-                    Link(destination: URL(string: "https://example.com/terms")!) {
-                        HStack {
-                            Image(systemName: "doc.text")
-                            Text("Terms of Service")
-                            Spacer()
-                            Image(systemName: "arrow.up.right.square")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    // Data Management Section
+                    Section(header: Text("データ管理")
+                        .foregroundColor(Color.appTextSecondary)) {
+                        Button(action: {
+                            viewModel.showingExportSheet = true
+                        }) {
+                            HStack {
+                                Image(systemName: "square.and.arrow.up")
+                                    .foregroundColor(Color.appAccent)
+                                Text("日記をエクスポート")
+                                    .foregroundColor(Color.appTextPrimary)
+                            }
                         }
+                        .listRowBackground(Color.appSurface)
+
+                        Button(role: .destructive, action: {
+                            viewModel.showingDeleteConfirmation = true
+                        }) {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text("すべての日記を削除")
+                            }
+                        }
+                        .listRowBackground(Color.appSurface)
+                    }
+
+                    // About Section
+                    Section(header: Text("その他")
+                        .foregroundColor(Color.appTextSecondary)) {
+                        Link(destination: URL(string: "https://example.com/privacy")!) {
+                            HStack {
+                                Image(systemName: "lock.shield")
+                                    .foregroundColor(Color.appAccent)
+                                Text("プライバシーポリシー")
+                                    .foregroundColor(Color.appTextPrimary)
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.caption)
+                                    .foregroundColor(Color.appTextSecondary)
+                            }
+                        }
+                        .listRowBackground(Color.appSurface)
+
+                        Link(destination: URL(string: "https://example.com/terms")!) {
+                            HStack {
+                                Image(systemName: "doc.text")
+                                    .foregroundColor(Color.appAccent)
+                                Text("利用規約")
+                                    .foregroundColor(Color.appTextPrimary)
+                                Spacer()
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.caption)
+                                    .foregroundColor(Color.appTextSecondary)
+                            }
+                        }
+                        .listRowBackground(Color.appSurface)
                     }
                 }
+                .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Settings")
+            .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color.appBackground, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
+                    Button("完了") {
                         dismiss()
                     }
+                    .foregroundColor(Color.appAccent)
                 }
             }
-            .alert("Success", isPresented: .constant(viewModel.successMessage != nil)) {
+            .alert("成功", isPresented: .constant(viewModel.successMessage != nil)) {
                 Button("OK") {
                     viewModel.successMessage = nil
                 }
@@ -89,7 +115,7 @@ struct SettingsView: View {
                     Text(successMessage)
                 }
             }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("エラー", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
                     viewModel.errorMessage = nil
                 }
@@ -98,19 +124,19 @@ struct SettingsView: View {
                     Text(errorMessage)
                 }
             }
-            .alert("Delete All Diaries", isPresented: $viewModel.showingDeleteConfirmation) {
-                Button("Cancel", role: .cancel) {}
-                Button("Delete", role: .destructive) {
+            .alert("すべての日記を削除", isPresented: $viewModel.showingDeleteConfirmation) {
+                Button("キャンセル", role: .cancel) {}
+                Button("削除", role: .destructive) {
                     viewModel.deleteAllDiaries()
                 }
             } message: {
-                Text("Are you sure you want to delete all diary entries? This action cannot be undone.")
+                Text("すべての日記を削除しますか？この操作は取り消せません。")
             }
             .sheet(isPresented: $viewModel.showingExportSheet) {
                 if let exportData = viewModel.exportDiaries() {
                     ShareSheet(activityItems: [exportData])
                 } else {
-                    Text("Failed to export diaries")
+                    Text("日記のエクスポートに失敗しました")
                 }
             }
         }
