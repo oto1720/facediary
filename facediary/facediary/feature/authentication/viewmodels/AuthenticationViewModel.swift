@@ -31,12 +31,6 @@ class AuthenticationViewModel: ObservableObject {
 
     /// 認証（Face ID / Touch ID）
     func authenticate() {
-        // デバッグビルド時は認証をスキップ
-        #if DEBUG
-        authenticationState = .success
-        return
-        #endif
-
         authenticationState = .biometricAuth
 
         Task {

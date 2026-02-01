@@ -56,19 +56,11 @@ struct AnalyticsView: View {
                 .font(.headline)
                 .foregroundColor(Color.appTextPrimary)
 
-            HStack(spacing: 20) {
-                statCard(
-                    title: "合計エントリー数",
-                    value: "\(statistics.totalEntries)",
-                    icon: "book.fill"
-                )
-
-                statCard(
-                    title: "1日平均",
-                    value: String(format: "%.1f", statistics.averageEntriesPerDay),
-                    icon: "calendar"
-                )
-            }
+            statCard(
+                title: "合計エントリー数",
+                value: "\(statistics.totalEntries)",
+                icon: "book.fill"
+            )
 
             if let mostFrequentMood = statistics.mostFrequentMood {
                 VStack {

@@ -91,7 +91,7 @@ enum DateHelper {
     }
 
     /// Get the relative string for a date
-
+
     /// Get the date range from a start date to an end date
     static func dateRange(from startDate: Date, to endDate: Date) -> [Date] {
         var dates: [Date] = []

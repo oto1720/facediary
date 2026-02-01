@@ -4,6 +4,7 @@ import SwiftUI
 struct DiaryEntryCreateView: View {
     @StateObject private var viewModel = DiaryEntryViewModel()
     @Environment(\.dismiss) var dismiss
+    @FocusState private var isTextEditorFocused: Bool
 
     /// Completion handler
     var onComplete: (() -> Void)?
@@ -33,10 +34,23 @@ struct DiaryEntryCreateView: View {
             }
             .navigationTitle("日記を書く")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(viewModel.capturedPhotoData == nil ? Color.clear : Color.appBackground, for: .navigationBar)
+            .toolbarBackground(viewModel.capturedPhotoData == nil ? .hidden : .visible, for: .navigationBar)
+            .toolbarColorScheme(viewModel.capturedPhotoData == nil ? .dark : .light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("キャンセル") {
                         dismiss()
+                    }
+                    .foregroundColor(viewModel.capturedPhotoData == nil ? .white : Color.appAccent)
+                }
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        Button("完了") {
+                            isTextEditorFocused = false
+                        }
+                        .foregroundColor(Color.appAccent)
                     }
                 }
             }
@@ -49,7 +63,7 @@ struct DiaryEntryCreateView: View {
                     Text(errorMessage)
                 }
             }
-            .onChange(of: viewModel.saveSucceeded) { succeeded in
+            .onChange(of: viewModel.saveSucceeded) { _, succeeded in
                 if succeeded {
                     onComplete?()
                     dismiss()
@@ -110,53 +124,68 @@ struct DiaryEntryCreateView: View {
     }
 
     private var diaryInputView: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Photo preview
-                if let photoData = viewModel.capturedPhotoData,
-                   let uiImage = UIImage(data: photoData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 250)
-                        .clipped()
-                        .cornerRadius(15)
-                        .padding(.horizontal)
+        ZStack {
+            Color.appBackground
+                .ignoresSafeArea()
+                .onTapGesture {
+                    isTextEditorFocused = false
                 }
 
-                // Mood selector (always shown)
-                moodSelectorView
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Photo preview
+                    if let photoData = viewModel.capturedPhotoData,
+                       let uiImage = UIImage(data: photoData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 250)
+                            .clipped()
+                            .cornerRadius(15)
+                            .padding(.horizontal)
+                    }
 
-                // Diary text input
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("日記")
-                        .font(.headline)
-                        .padding(.horizontal)
+                    // Mood selector (always shown)
+                    moodSelectorView
 
-                    TextEditor(text: $viewModel.diaryText)
-                        .frame(minHeight: 150)
-                        .padding(8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                        .padding(.horizontal)
+                    // Diary text input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("日記")
+                            .font(.headline)
+                            .foregroundColor(Color.appTextPrimary)
+                            .padding(.horizontal)
+
+                        TextEditor(text: $viewModel.diaryText)
+                            .frame(minHeight: 150)
+                            .padding(8)
+                            .scrollContentBackground(.hidden)
+                            .background(Color.appSurface)
+                            .foregroundColor(Color.appTextPrimary)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                            .focused($isTextEditorFocused)
+                    }
+
+                    // Save diary button
+                    Button(action: {
+                        viewModel.saveDiary { _ in }
+                    }) {
+                        Text("保存")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.appAccent)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
                 }
-
-                // Save diary button
-                Button(action: {
-                    viewModel.saveDiary { _ in }
-                }) {
-                    Text("保存")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(10)
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
+                .padding(.top)
             }
-            .padding(.top)
+            .onTapGesture {
+                isTextEditorFocused = false
+            }
         }
     }
 
@@ -164,11 +193,12 @@ struct DiaryEntryCreateView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("今の気分")
                 .font(.headline)
+                .foregroundColor(Color.appTextPrimary)
                 .padding(.horizontal)
 
             Text("今の気持ちに近いものを選んでください")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.appTextSecondary)
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -189,13 +219,14 @@ struct DiaryEntryCreateView: View {
             Text(mood.rawValue)
                 .font(.caption)
                 .fontWeight(.medium)
+                .foregroundColor(Color.appTextPrimary)
         }
         .padding()
         .frame(width: 100)
         .background(
             viewModel.selectedMood == mood
                 ? Color.color(for: mood).opacity(0.3)
-                : Color(.systemGray6)
+                : Color.appSurface
         )
         .cornerRadius(15)
         .overlay(
@@ -208,6 +239,7 @@ struct DiaryEntryCreateView: View {
                 )
         )
         .onTapGesture {
+            isTextEditorFocused = false
             viewModel.updateMood(mood)
         }
     }

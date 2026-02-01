@@ -29,10 +29,10 @@ class SettingsViewModel: ObservableObject {
     func deleteAllDiaries() {
         do {
             try persistenceService.save(entries: [])
-            successMessage = "All diary entries have been deleted."
+            successMessage = "すべての日記を削除しました。"
             HapticFeedback.success()
         } catch {
-            errorMessage = "Failed to delete diary entries: \(error.localizedDescription)"
+            errorMessage = "日記の削除に失敗しました: \(error.localizedDescription)"
             HapticFeedback.error()
         }
     }
@@ -47,15 +47,15 @@ class SettingsViewModel: ObservableObject {
             let data = try encoder.encode(entries)
             return String(data: data, encoding: .utf8)
         } catch {
-            errorMessage = "Failed to export diaries: \(error.localizedDescription)"
+            errorMessage = "日記のエクスポートに失敗しました: \(error.localizedDescription)"
             return nil
         }
     }
 
     /// Get app version
     func getAppVersion() -> String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
-        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
-        return "Version \(version) (Build \(build))"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "不明"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "不明"
+        return "\(version) (ビルド \(build))"
     }
 }
