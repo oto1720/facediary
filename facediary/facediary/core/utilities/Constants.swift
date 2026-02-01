@@ -6,8 +6,8 @@ enum Constants {
 
     // MARK: - App Info
 
-    static let appName = "FaceDiary"
-    static let bundleIdentifier = "com.example.facediary"
+    static let appName = "カオログ"
+    static let bundleIdentifier = "com.example.kaolog"
 
     // MARK: - Mood Analysis
 
